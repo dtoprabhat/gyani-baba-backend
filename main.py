@@ -1,10 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os
 from pypdf import PdfReader
 
-app = FastAPI(title="Gyani Baba Knowledge Backend with PDF Upload")
+app = FastAPI(title="Gyani Baba Knowledge Backend")
 
 # Enable CORS taaki Google Sites se ye API connect ho sake
 app.add_middleware(
@@ -15,7 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Gyani Baba Memory Database (Initial Memory)
+# Gyani Baba Memory Database
 GYANI_MEMORY = [
     {
         "topic": "leave rules", 
@@ -30,14 +29,13 @@ GYANI_MEMORY = [
 class QueryRequest(BaseModel):
     prompt: str
 
-# 1. PDF Upload karke Memory Update karne ka endpoint
+# 1. PDF Upload Endpoint (Memory update karne ke liye)
 @app.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Kripya sirf PDF file upload karein.")
     
     try:
-        # PDF ko read karna
         reader = PdfReader(file.file)
         extracted_text = ""
         for page in reader.pages:
@@ -45,17 +43,16 @@ async def upload_pdf(file: UploadFile = File(...)):
             if text:
                 extracted_text += text + "\n"
         
-        # Memory mein naye document ko jorna
         topic_name = file.filename.replace(".pdf", "").replace("_", " ").lower()
         GYANI_MEMORY.append({
             "topic": topic_name,
-            "content": extracted_text[:1500] # Pehle 1500 characters store honge
+            "content": extracted_text[:1500] # Pehle 1500 characters memory mein save honge
         })
         
         return {"status": "success", "message": f"'{file.filename}' safaltapurvak Gyani Baba ki memory mein jodh diya gaya hai!"}
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"File read karne mein samasya aayi: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # 2. Chat Query Endpoint
 @app.post("/chat")
@@ -69,7 +66,7 @@ def chat_with_gyani(request: QueryRequest):
             "answer": "Kalyan ho! Main Gyani Baba hoon. Aap mujhse kisi bhi sarkari circular, notification, act ya rule ke baare mein pooch sakte hain. Batayein, aaj kis vishay par charcha karni hai?"
         }
 
-    # Search in Memory
+    # Search in Memory (Including uploaded PDFs)
     matched_info = None
     for item in GYANI_MEMORY:
         if any(keyword in user_query for keyword in item["topic"].split()):

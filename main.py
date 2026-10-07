@@ -13,10 +13,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Gyani Baba Memory Database
+# ==========================================
+# GYANI BABA MEMORY (Yahan aap apne naye rules/circulars add kar sakte hain)
+# ==========================================
 GYANI_MEMORY = [
-    {"topic": "leave rules", "content": "As per Circular No. 102/2025, casual leave can be availed up to 15 days per year with prior approval."},
-    {"topic": "transfer policy", "content": "Office Memorandum 2026 states that routine transfers will take place strictly in the month of May."}
+    {
+        "topic": "leave rules", 
+        "content": "As per Circular No. 102/2025, casual leave can be availed up to 15 days per year with prior approval."
+    },
+    {
+        "topic": "transfer policy", 
+        "content": "Office Memorandum 2026 states that routine transfers will take place strictly in the month of May."
+    },
+    # Aap yahan apna naya circular ya rule is tarah aage jodh sakte hain:
+    # {
+    #     "topic": "apne topic ka naam ya keyword likhein", 
+    #     "content": "Yahan us circular ya rule ki poori jankari likhein."
+    # }
 ]
 
 class QueryRequest(BaseModel):
@@ -26,12 +39,14 @@ class QueryRequest(BaseModel):
 def chat_with_gyani(request: QueryRequest):
     user_query = request.prompt.lower().strip()
     
-    # 1. Basic Greetings check (Agar user hello/hi/namaste bole)
-    greetings = ["hi", "hello", "hey", "namaste", "pranam", "good morning", "good evening", "kaise ho"]
+    # 1. Basic Greetings Check (Hi, Hello, Namaste, Pranam, etc.)
+    greetings = ["hi", "hello", "hey", "namaste", "pranam", "good morning", "good evening", "kaise ho", "kya हाल hai"]
     if any(greet in user_query for greet in greetings):
-        return {"answer": "Kalyan ho! Main Gyani Baba hoon. Aap mujhse kisi bhi sarkari circular, notification, act ya rule ke baare mein pooch sakte hain. Batayein, aaj kis vishay par charcha karni hai?"}
+        return {
+            "answer": "Kalyan ho! Main Gyani Baba hoon. Aap mujhse kisi bhi sarkari circular, notification, act ya rule ke baare mein pooch sakte hain. Batayein, aaj kis vishay par charcha karni hai?"
+        }
 
-    # 2. Memory Search logic for government rules/circulars
+    # 2. Search in Gyani Baba Memory
     matched_info = None
     for item in GYANI_MEMORY:
         if any(keyword in user_query for keyword in item["topic"].split()):
@@ -41,7 +56,7 @@ def chat_with_gyani(request: QueryRequest):
     if matched_info:
         answer = f"Gyani Baba ke abhilekh ke anusar: {matched_info}"
     else:
-        # Strict guardrail jab memory mein data na ho
+        # Strict Guardrail jab memory mein data na ho
         answer = "Ye suchna mere paas abhi uplabdh nahi hai, main isse seekh raha hoon."
         
     return {"answer": answer}

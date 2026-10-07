@@ -24,8 +24,14 @@ class QueryRequest(BaseModel):
 
 @app.post("/chat")
 def chat_with_gyani(request: QueryRequest):
-    user_query = request.prompt.lower()
+    user_query = request.prompt.lower().strip()
     
+    # 1. Basic Greetings check (Agar user hello/hi/namaste bole)
+    greetings = ["hi", "hello", "hey", "namaste", "pranam", "good morning", "good evening", "kaise ho"]
+    if any(greet in user_query for greet in greetings):
+        return {"answer": "Kalyan ho! Main Gyani Baba hoon. Aap mujhse kisi bhi sarkari circular, notification, act ya rule ke baare mein pooch sakte hain. Batayein, aaj kis vishay par charcha karni hai?"}
+
+    # 2. Memory Search logic for government rules/circulars
     matched_info = None
     for item in GYANI_MEMORY:
         if any(keyword in user_query for keyword in item["topic"].split()):
@@ -35,6 +41,7 @@ def chat_with_gyani(request: QueryRequest):
     if matched_info:
         answer = f"Gyani Baba ke abhilekh ke anusar: {matched_info}"
     else:
+        # Strict guardrail jab memory mein data na ho
         answer = "Ye suchna mere paas abhi uplabdh nahi hai, main isse seekh raha hoon."
         
     return {"answer": answer}
